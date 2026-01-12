@@ -114,8 +114,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Inferir tipo desde el resultado real (incluye user automáticamente)
+    type MovementWithUser = typeof movements[number];
+
     const csvHeader = "Fecha,Concepto,Tipo,Monto,Usuario,Email\n";
-    const csvRows = movements.map((movement) => {
+    const csvRows = movements.map((movement: MovementWithUser) => {
       const date = new Date(movement.date).toISOString().split("T")[0];
       const concept = escapeCSVField(movement.concept);
       const type = movement.type === "INCOME" ? "Ingreso" : "Gasto";
