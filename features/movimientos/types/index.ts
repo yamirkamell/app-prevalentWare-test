@@ -1,7 +1,14 @@
-import { Movement, MovementType, User } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-export type MovementWithUser = Movement & {
-  user: Pick<User, "id" | "name" | "email">;
+// Inferir tipos desde Prisma v7 (no se importan directamente)
+type Movement = Awaited<ReturnType<typeof prisma.movement.findFirst>>;
+type User = Awaited<ReturnType<typeof prisma.user.findFirst>>;
+
+// MovementType se puede inferir desde el schema o usar como string literal
+export type MovementType = "INCOME" | "EXPENSE";
+
+export type MovementWithUser = NonNullable<Movement> & {
+  user: Pick<NonNullable<User>, "id" | "name" | "email">;
 };
 
 export interface GetMovementsResponse {

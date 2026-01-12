@@ -1,6 +1,12 @@
-import { User, Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-export interface UserWithCounts extends Omit<User, "password"> {
+// Inferir tipos desde Prisma v7 (no se importan directamente)
+type User = Awaited<ReturnType<typeof prisma.user.findFirst>>;
+
+// Role como string literal (compatible con Prisma v7)
+export type Role = "ADMIN" | "USER";
+
+export interface UserWithCounts extends Omit<NonNullable<User>, "password"> {
   _count?: {
     movements: number;
     sessions: number;
