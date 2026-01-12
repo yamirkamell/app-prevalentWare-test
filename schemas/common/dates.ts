@@ -4,10 +4,7 @@ import { z } from "zod";
  * Schema para formato de fecha YYYY-MM-DD
  */
 export const dateStringSchema = z
-  .string({
-    required_error: "La fecha es requerida",
-    invalid_type_error: "La fecha debe ser una cadena de texto",
-  })
+  .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe estar en formato YYYY-MM-DD")
   .transform((str) => {
     const date = new Date(str);

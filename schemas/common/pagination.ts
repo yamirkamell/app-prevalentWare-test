@@ -8,12 +8,14 @@ export const paginationSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 1))
-    .pipe(z.number().int().positive().default(1)),
+    .pipe(z.number().int().positive())
+    .default(1),
   limit: z
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 10))
-    .pipe(z.number().int().positive().max(100).default(10)),
+    .pipe(z.number().int().positive().max(100))
+    .default(10),
 });
 
 /**

@@ -15,13 +15,12 @@ export function useCreateMovement(): UseCreateMovementReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createMovement = async (data: CreateMovementInput) => {
+  const createMovement = async (data: CreateMovementInput): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await MovementService.createMovement(data);
-      return result;
+      await MovementService.createMovement(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Error desconocido";
       setError(errorMessage);

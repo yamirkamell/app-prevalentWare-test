@@ -75,7 +75,7 @@ export function MovementsChart({
               padding={{ top: 10, bottom: 10 }}
             />
             <Tooltip
-              formatter={(value: number) => formatCurrency(value)}
+              formatter={(value: number | undefined) => value !== undefined ? formatCurrency(value) : ""}
               labelStyle={{ color: "#374151" }}
             />
             <Legend />
@@ -123,7 +123,7 @@ export function MovementsChart({
               padding={{ top: 10, bottom: 10 }}
             />
             <Tooltip
-              formatter={(value: number) => formatCurrency(value)}
+              formatter={(value: number | undefined) => value !== undefined ? formatCurrency(value) : ""}
               labelStyle={{ color: "#374151" }}
             />
             <Legend />

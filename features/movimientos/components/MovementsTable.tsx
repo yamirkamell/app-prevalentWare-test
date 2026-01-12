@@ -16,8 +16,20 @@ interface MovementsTableProps {
   isLoading?: boolean;
 }
 
-function formatCurrency(amount: number | string): string {
-  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+function formatCurrency(amount: number | string | { toNumber?: () => number; toString?: () => string }): string {
+  let numAmount: number;
+  
+  if (typeof amount === "string") {
+    numAmount = parseFloat(amount);
+  } else if (typeof amount === "number") {
+    numAmount = amount;
+  } else {
+    // Prisma Decimal type
+    numAmount = typeof amount.toNumber === "function" 
+      ? amount.toNumber() 
+      : parseFloat(amount.toString?.() || "0");
+  }
+  
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency: "EUR",

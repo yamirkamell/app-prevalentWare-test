@@ -4,19 +4,13 @@ import { userIdSchema } from "../common/ids";
 /**
  * Schema base para el rol de usuario
  */
-export const userRoleSchema = z.enum(["ADMIN", "USER"], {
-  required_error: "El rol es requerido",
-  invalid_type_error: "El rol debe ser ADMIN o USER",
-});
+export const userRoleSchema = z.enum(["ADMIN", "USER"]);
 
 /**
  * Schema base para nombre de usuario
  */
 export const userNameSchema = z
-  .string({
-    required_error: "El nombre es requerido",
-    invalid_type_error: "El nombre debe ser un texto",
-  })
+  .string()
   .min(1, "El nombre no puede estar vacío")
   .max(255, "El nombre no puede exceder 255 caracteres");
 
@@ -24,10 +18,7 @@ export const userNameSchema = z
  * Schema base para email
  */
 export const userEmailSchema = z
-  .string({
-    required_error: "El email es requerido",
-    invalid_type_error: "El email debe ser un texto",
-  })
+  .string()
   .email("El email debe tener un formato válido")
   .max(255, "El email no puede exceder 255 caracteres");
 

@@ -91,8 +91,8 @@ export function CreateMovementModal({
     
     if (!validationResult.success) {
       const fieldErrors: FormErrors = {};
-      if (validationResult.error?.errors) {
-        validationResult.error.errors.forEach((err) => {
+      if (validationResult.error?.issues) {
+        validationResult.error.issues.forEach((err) => {
           if (err.path && err.path[0]) {
             fieldErrors[err.path[0] as keyof FormErrors] = err.message;
           }

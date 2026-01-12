@@ -16,23 +16,6 @@ const authConfig: Parameters<typeof betterAuth>[0] = {
   },
   secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL,
-  hooks: {
-    user: {
-      created: {
-        after: async ({ user }) => {
-          try {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { role: "ADMIN" },
-            });
-
-          } catch (error) {
-            console.error("[Better Auth] Error al asignar rol ADMIN:", error);
-          }
-        },
-      },
-    },
-  },
 };
 
 if (githubClientId && githubClientSecret) {

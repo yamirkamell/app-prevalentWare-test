@@ -63,7 +63,7 @@ export function EditUserModal({
     const validationResult = updateUserSchema.safeParse(formData);
     if (!validationResult.success) {
       const fieldErrors: FormErrors = {};
-      validationResult.error.errors.forEach((err) => {
+      validationResult.error.issues.forEach((err) => {
         if (err.path[0]) {
           fieldErrors[err.path[0] as keyof FormErrors] = err.message;
         }
