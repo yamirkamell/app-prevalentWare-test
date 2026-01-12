@@ -9,6 +9,10 @@ const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
 // Detectar baseURL automáticamente en producción
 const getBaseURL = () => {
   // En producción, usar la variable de entorno o detectar desde Vercel
+  // Prioridad: BETTER_AUTH_BASE_URL > BETTER_AUTH_URL > NEXT_PUBLIC_APP_URL > VERCEL_URL
+  if (process.env.BETTER_AUTH_BASE_URL) {
+    return process.env.BETTER_AUTH_BASE_URL;
+  }
   if (process.env.BETTER_AUTH_URL) {
     return process.env.BETTER_AUTH_URL;
   }
@@ -24,6 +28,45 @@ const getBaseURL = () => {
 
 const baseURL = getBaseURL();
 
+// Recopilar todos los orígenes posibles para Vercel
+const getTrustedOrigins = (): string[] | undefined => {
+  // En desarrollo, no restringir orígenes
+  if (process.env.NODE_ENV !== "production") {
+    return undefined;
+  }
+  
+  const origins: string[] = [];
+  
+  // Agregar baseURL
+  if (baseURL) {
+    origins.push(baseURL);
+  }
+  
+  // Agregar URL de Vercel si está disponible
+  if (process.env.VERCEL_URL) {
+    origins.push(`https://${process.env.VERCEL_URL}`);
+  }
+  
+  // Agregar NEXT_PUBLIC_APP_URL si está disponible
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    origins.push(process.env.NEXT_PUBLIC_APP_URL);
+  }
+  
+  // Agregar BETTER_AUTH_BASE_URL si está disponible
+  if (process.env.BETTER_AUTH_BASE_URL) {
+    origins.push(process.env.BETTER_AUTH_BASE_URL);
+  }
+  // Agregar BETTER_AUTH_URL si está disponible
+  if (process.env.BETTER_AUTH_URL) {
+    origins.push(process.env.BETTER_AUTH_URL);
+  }
+  
+  // Eliminar duplicados y valores vacíos
+  const uniqueOrigins = [...new Set(origins.filter(Boolean))];
+  
+  return uniqueOrigins.length > 0 ? uniqueOrigins : undefined;
+};
+
 const authConfig: Parameters<typeof betterAuth>[0] = {
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -31,16 +74,10 @@ const authConfig: Parameters<typeof betterAuth>[0] = {
   emailAndPassword: {
     enabled: true,
   },
-  secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
+  secret: process.env.AUTH_SECRET || process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL,
-  // Permitir orígenes de Vercel
-  trustedOrigins: process.env.NODE_ENV === "production" 
-    ? [
-        baseURL,
-        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-        ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
-      ]
-    : undefined,
+  // Permitir orígenes de Vercel - configurar solo en producción
+  trustedOrigins: getTrustedOrigins(),
 };
 
 if (githubClientId && githubClientSecret) {
