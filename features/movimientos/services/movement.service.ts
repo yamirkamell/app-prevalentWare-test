@@ -73,7 +73,6 @@ export class MovementService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      console.error("[MovementService] Error del servidor:", error);
       throw new Error(
         error.message || `Error al crear movimiento: ${response.statusText}`
       );

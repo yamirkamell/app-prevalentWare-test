@@ -32,9 +32,6 @@ export function normalizeUserForRBAC(user: User | null): UserWithRoles | null {
   const userRole = (user as any).role || (user as any).roles?.[0];
 
   if (!userRole) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[normalizeUserForRBAC] Usuario sin rol, retornando roles vacío");
-    }
     return {
       ...user,
       roles: [],

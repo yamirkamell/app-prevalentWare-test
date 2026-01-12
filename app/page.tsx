@@ -40,7 +40,7 @@ export default function Home() {
       await logout();
       router.replace("/login");
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      // El error ya está manejado en el hook
       router.replace("/login");
     }
   };

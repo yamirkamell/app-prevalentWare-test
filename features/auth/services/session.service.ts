@@ -18,19 +18,12 @@ export class SessionService {
       });
 
       if (!response.ok) {
-        if (process.env.NODE_ENV === "development") {
-          const errorText = await response.text();
-          console.error("[SessionService] API error response:", errorText);
-        }
         return null;
       }
           const data = await response.json();
 
           return data.user || null;
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[SessionService] Error fetching user from API:", error);
-      }
       return null;
     }
   }
@@ -70,9 +63,6 @@ export class SessionService {
         } else if (session.user) {
           if (!(session.user as any).role) {
             (session.user as any).role = "ADMIN";
-            if (process.env.NODE_ENV === "development") {
-              console.warn("[SessionService] Usuario sin rol, asignando ADMIN por defecto");
-            }
           }
         }
       }
@@ -92,9 +82,6 @@ export class SessionService {
       
       return finalSession;
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[SessionService] Error getting session:", error);
-      }
       return null;
     }
   }

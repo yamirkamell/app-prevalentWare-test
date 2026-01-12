@@ -88,9 +88,6 @@ export async function getServerSession(): Promise<Session | null> {
       userId: user.id,
     } as Session;
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[getServerSession] Error:", error);
-    }
     return null;
   }
 }

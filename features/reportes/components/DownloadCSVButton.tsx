@@ -21,7 +21,6 @@ export function DownloadCSVButton({
     try {
       await downloadCSV(filters);
     } catch (err) {
-      console.error("Error al descargar CSV:", err);
     }
   };
 

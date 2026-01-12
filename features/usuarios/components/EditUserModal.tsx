@@ -77,7 +77,6 @@ export function EditUserModal({
       onSuccess?.();
       onOpenChange(false);
     } catch (err) {
-      console.error("Error al actualizar usuario:", err);
     }
   };
 

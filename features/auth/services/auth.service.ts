@@ -270,7 +270,6 @@ export class AuthService {
 
 
       if (result.error) {
-        console.error("[AuthService] Error en signIn.social:", result.error);
         return {
           url: null,
           error: result.error.message || "Error al iniciar sesión con GitHub",
@@ -285,13 +284,11 @@ export class AuthService {
         };
       }
 
-      console.warn("[AuthService] No se recibió URL de autorización, pero no hubo error");
       return {
         url: null,
         error: "No se recibió URL de autorización de GitHub",
       };
     } catch (error) {
-      console.error("[AuthService] Error en loginWithGitHub:", error);
       return {
         url: null,
         error: error instanceof Error ? error.message : "Error desconocido al iniciar sesión con GitHub",

@@ -56,10 +56,6 @@ export class UserService {
     userId: string,
     data: UpdateUserInput
   ): Promise<UpdateUserResponse> {
-    if (process.env.NODE_ENV === "development") {
-      console.log("[UserService] Actualizando usuario:", userId, "con datos:", data);
-    }
-
     const response = await fetch(`${this.API_URL}/${userId}`, {
       method: "PUT",
       headers: {
@@ -69,24 +65,14 @@ export class UserService {
       body: JSON.stringify(data),
     });
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("[UserService] Respuesta del servidor:", response.status, response.statusText);
-    }
-
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      if (process.env.NODE_ENV === "development") {
-        console.error("[UserService] Error del servidor:", error);
-      }
       throw new Error(
         error.message || `Error al actualizar usuario: ${response.statusText}`
       );
     }
 
     const result = await response.json();
-    if (process.env.NODE_ENV === "development") {
-      console.log("[UserService] Usuario actualizado exitosamente:", result);
-    }
     return result;
   }
 }
