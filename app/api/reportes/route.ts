@@ -219,11 +219,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Inferir tipo desde el resultado real
+    type Movement = typeof movements[number];
+
     const groupedData = groupMovementsByPeriod(movements, groupBy);
 
     const totalMovements = movements.length;
-    const incomeCount = movements.filter((m) => m.type === "INCOME").length;
-    const expenseCount = movements.filter((m) => m.type === "EXPENSE").length;
+    const incomeCount = movements.filter((m: Movement) => m.type === "INCOME").length;
+    const expenseCount = movements.filter((m: Movement) => m.type === "EXPENSE").length;
 
     return NextResponse.json({
       balance: {
