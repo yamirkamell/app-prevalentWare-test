@@ -8,38 +8,16 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function getPrismaClient() {
-  let connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL no está configurada en las variables de entorno");
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    connectionString = connectionString.replace(/sslmode=require/gi, "sslmode=no-verify");
-    if (!connectionString.includes("sslmode=")) {
-      connectionString += (connectionString.includes("?") ? "&" : "?") + "sslmode=no-verify";
-    }
-  }
-
-  if (globalForPrisma.pool) {
-    globalForPrisma.pool.end().catch(() => {
-    });
-    globalForPrisma.pool = undefined;
-  }
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error("DATABASE_URL no configurada");
 
   const pool = new Pool({
     connectionString,
-    ssl: process.env.NODE_ENV === "development" 
-      ? {
-          rejectUnauthorized: false,
-        }
-      : {
-          rejectUnauthorized: true,
-        },
+    ssl: process.env.NODE_ENV === "development" ? { rejectUnauthorized: false } : { rejectUnauthorized: true },
     max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
   });
 
+  globalForPrisma.pool?.end().catch(() => {});
   globalForPrisma.pool = pool;
 
   const adapter = new PrismaPg(pool);
@@ -51,18 +29,18 @@ function getPrismaClient() {
 }
 
 export const prisma = globalForPrisma.prisma ?? getPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 /**
  * Helper para transacciones
- * @param callback Función que contiene las operaciones a ejecutar en la transacción
- * @returns Resultado de la función callback
  */
 export async function prismaTransaction<T>(
-  callback: (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends" | "$use">) => Promise<T>
+  callback: (
+    tx: Omit<
+      PrismaClient,
+      "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends" | "$use"
+    >
+  ) => Promise<T>
 ): Promise<T> {
   return prisma.$transaction(callback);
 }
@@ -72,8 +50,7 @@ export async function disconnectPrisma(): Promise<void> {
 }
 
 /**
- * Helper para verificar la conexión a la base de datos
- * @returns true si la conexión es exitosa
+ * Verificar conexión DB
  */
 export async function checkDatabaseConnection(): Promise<boolean> {
   try {
