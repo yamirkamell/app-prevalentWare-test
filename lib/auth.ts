@@ -5,7 +5,24 @@ import { headers } from "next/headers";
 
 const githubClientId = process.env.GITHUB_CLIENT_ID;
 const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
-const baseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+// Detectar baseURL automáticamente en producción
+const getBaseURL = () => {
+  // En producción, usar la variable de entorno o detectar desde Vercel
+  if (process.env.BETTER_AUTH_URL) {
+    return process.env.BETTER_AUTH_URL;
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  // Fallback para desarrollo local
+  return "http://localhost:3000";
+};
+
+const baseURL = getBaseURL();
 
 const authConfig: Parameters<typeof betterAuth>[0] = {
   database: prismaAdapter(prisma, {
@@ -16,6 +33,14 @@ const authConfig: Parameters<typeof betterAuth>[0] = {
   },
   secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL,
+  // Permitir orígenes de Vercel
+  trustedOrigins: process.env.NODE_ENV === "production" 
+    ? [
+        baseURL,
+        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+        ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
+      ]
+    : undefined,
 };
 
 if (githubClientId && githubClientSecret) {
