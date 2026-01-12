@@ -486,7 +486,7 @@ export async function POST(request: NextRequest) {
       data: {
         amount,
         concept,
-        date,
+        date: dateValue,
         type,
         userId: targetUserId,
       },
