@@ -445,6 +445,11 @@ export async function POST(request: NextRequest) {
 
     const { amount, concept, date, type, userId } = validationResult.data;
 
+    // Convertir la fecha a DateTime completo para Prisma
+    // El schema valida que date sea un string en formato "YYYY-MM-DD"
+    // Prisma requiere un DateTime completo, así que agregamos la hora
+    const dateValue = new Date(date + "T00:00:00.000Z");
+
     let targetUserId: string;
     
     if (userId) {
