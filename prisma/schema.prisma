@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum MovementType {
+  INCOME
+  EXPENSE
+}
+
+// ============================================
+// Models
+// ============================================
+
+model User {
+  id        String      @id @default(uuid())
+  name      String
+  email     String      @unique
+  emailVerified Boolean  @default(false)
+  image     String?
+  phone     String?     // Teléfono opcional para mostrar en tabla de usuarios
+  role      Role        @default(ADMIN) // Usuarios nuevos son ADMIN por defecto
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relaciones
+  movements Movement[]
+  sessions  Session[]
+  accounts  Account[]
+
+  // Índices
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Movement {
+  id        String       @id @default(uuid())
+  amount    Decimal      @db.Decimal(15, 2) // Precisión para valores financieros
+  concept   String
+  date      DateTime     @db.Date
+  type      MovementType
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relación con User
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Índices para optimizar consultas comunes
+  @@index([userId])
+  @@index([date])
+  @@index([type])
+  @@index([userId, date])
+  @@index([userId, type])
+  @@map("movements")
+}
+
+// ============================================
+// Better Auth Models
+// ============================================
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  accountId         String
+  providerId        String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  password          String?
+  idToken           String?
+  accessTokenSecret String?
+  refreshTokenExpiresIn Int?
+  scope             String?
+  passwordResetAt   DateTime?
+  passwordResetToken String? @unique
+  email             String?
+  emailChangeToken  String?
+  emailChange       String?
+  emailChangeExpires DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@index([email])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@index([identifier])
+  @@map("verifications")
+}
