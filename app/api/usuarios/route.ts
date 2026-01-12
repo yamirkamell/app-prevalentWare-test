@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
 import { Role } from "@/lib/rbac";
-import type { Prisma } from "@prisma/client";
 import { getUsersQuerySchema } from "@/features/usuarios/validators/user.validator";
+
+// Inferir tipos desde Prisma v7 (no se importan directamente)
+type UserWhereInput = NonNullable<Parameters<typeof prisma.user.findMany>[0]>["where"];
 
 /**
  * @swagger
@@ -169,7 +171,7 @@ export async function GET(request: NextRequest) {
 
     const { page, limit, role, search } = validatedQuery.data;
 
-    const where: Prisma.UserWhereInput = {};
+    const where: UserWhereInput = {};
 
     if (role) {
       where.role = role;

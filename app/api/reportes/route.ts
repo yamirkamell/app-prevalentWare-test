@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
 import { Role } from "@/lib/rbac";
-import type { Prisma } from "@prisma/client";
 import { getReportsQuerySchema } from "@/features/reportes/validators/report.validator";
+
+// Inferir tipos desde Prisma v7 (no se importan directamente)
+type MovementWhereInput = NonNullable<Parameters<typeof prisma.movement.findMany>[0]>["where"];
 
 /**
  * @swagger
@@ -164,7 +166,7 @@ export async function GET(request: NextRequest) {
 
     const { startDate, endDate, groupBy, userId: filterUserId } = validatedQuery.data;
 
-    const where: Prisma.MovementWhereInput = {};
+    const where: MovementWhereInput = {};
 
     if (filterUserId) {
       where.userId = filterUserId;

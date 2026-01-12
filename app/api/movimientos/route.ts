@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
 import { Role } from "@/lib/rbac";
 import { normalizeUserForRBAC } from "@/features/auth/guards/utils";
-import type { Prisma } from "@prisma/client";
 import {
   createMovementSchema,
   getMovementsQuerySchema,
 } from "@/features/movimientos/validators/movement.validator";
+
+// Inferir tipos desde Prisma v7 (no se importan directamente)
+type MovementWhereInput = NonNullable<Parameters<typeof prisma.movement.findMany>[0]>["where"];
 
 /**
  * @swagger
@@ -187,7 +189,7 @@ export async function GET(request: NextRequest) {
 
     const { page, limit, type, userId: filterUserId, startDate, endDate } = validatedQuery.data;
 
-    const where: Prisma.MovementWhereInput = {};
+    const where: MovementWhereInput = {};
 
     const normalizedUser = normalizeUserForRBAC(user);
     const isAdmin = normalizedUser?.roles?.includes(Role.ADMIN) ?? false;
