@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
-import { normalizeUserForRBAC } from "@/features/auth/guards/utils";
 import { Role } from "@/lib/rbac";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { getReportsQuerySchema } from "@/features/reportes/validators/report.validator";
 
 /**
@@ -143,21 +142,14 @@ import { getReportsQuerySchema } from "@/features/reportes/validators/report.val
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verificar que el usuario sea ADMIN (solo ADMIN puede ver reportes)
     const guardResult = await apiGuard(request, { role: Role.ADMIN });
     if (!guardResult.allowed || !guardResult.user) {
       return guardResult.response || NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const user = guardResult.user;
-    const normalizedUser = normalizeUserForRBAC(user);
-    const isAdmin = normalizedUser?.roles?.includes(Role.ADMIN) ?? false;
-
-    // Parsear query parameters
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
 
-    // Validar query parameters
     const validatedQuery = getReportsQuerySchema.safeParse(queryParams);
     if (!validatedQuery.success) {
       return NextResponse.json(
@@ -172,15 +164,12 @@ export async function GET(request: NextRequest) {
 
     const { startDate, endDate, groupBy, userId: filterUserId } = validatedQuery.data;
 
-    // Construir filtros
     const where: Prisma.MovementWhereInput = {};
 
-    // Los ADMIN pueden filtrar por userId si se proporciona
     if (filterUserId) {
       where.userId = filterUserId;
     }
 
-    // Filtro por rango de fechas
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {
@@ -191,7 +180,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Calcular saldo actual (suma de ingresos - suma de gastos)
     const [incomeSum, expenseSum] = await Promise.all([
       prisma.movement.aggregate({
         where: {
@@ -217,7 +205,6 @@ export async function GET(request: NextRequest) {
     const totalExpense = Number(expenseSum._sum.amount || 0);
     const currentBalance = totalIncome - totalExpense;
 
-    // Obtener datos agregados por período
     const movements = await prisma.movement.findMany({
       where,
       select: {
@@ -230,10 +217,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Agrupar datos según groupBy
     const groupedData = groupMovementsByPeriod(movements, groupBy);
 
-    // Calcular estadísticas adicionales
     const totalMovements = movements.length;
     const incomeCount = movements.filter((m) => m.type === "INCOME").length;
     const expenseCount = movements.filter((m) => m.type === "EXPENSE").length;
@@ -254,20 +239,24 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-
-    // Manejar errores de Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      error.code.startsWith("P")
+    ) {
+      const prismaError = error as { code: string; message?: string };
       return NextResponse.json(
         {
           error: "Database Error",
           message: "Error al consultar la base de datos",
-          code: error.code,
+          code: prismaError.code,
         },
         { status: 500 }
       );
     }
 
-    // Error genérico
     return NextResponse.json(
       {
         error: "Internal Server Error",
@@ -278,9 +267,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Agrupa movimientos por período (day, week, month)
- */
 function groupMovementsByPeriod(
   movements: Array<{ amount: any; type: string; date: Date | string }>,
   groupBy: "day" | "week" | "month"
@@ -295,15 +281,15 @@ function groupMovementsByPeriod(
 
     switch (groupBy) {
       case "day":
-        periodKey = date.toISOString().split("T")[0]; // YYYY-MM-DD
+        periodKey = date.toISOString().split("T")[0];
         break;
       case "week":
         const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay()); // Domingo de la semana
+        weekStart.setDate(date.getDate() - date.getDay());
         periodKey = `Semana ${weekStart.toISOString().split("T")[0]}`;
         break;
       case "month":
-        periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; // YYYY-MM
+        periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
         break;
       default:
         periodKey = date.toISOString().split("T")[0];
@@ -321,7 +307,6 @@ function groupMovementsByPeriod(
     }
   });
 
-  // Convertir a array y calcular balance
   return Array.from(grouped.entries())
     .map(([period, data]) => ({
       period,

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
-import { normalizeUserForRBAC } from "@/features/auth/guards/utils";
 import { Role } from "@/lib/rbac";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { getCSVQuerySchema } from "@/features/reportes/validators/report.validator";
 
 /**
@@ -60,21 +59,14 @@ import { getCSVQuerySchema } from "@/features/reportes/validators/report.validat
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verificar que el usuario sea ADMIN (solo ADMIN puede descargar CSV)
     const guardResult = await apiGuard(request, { role: Role.ADMIN });
     if (!guardResult.allowed || !guardResult.user) {
       return guardResult.response || NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const user = guardResult.user;
-    const normalizedUser = normalizeUserForRBAC(user);
-    const isAdmin = normalizedUser?.roles?.includes(Role.ADMIN) ?? false;
-
-    // Parsear query parameters
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
 
-    // Validar query parameters
     const validatedQuery = getCSVQuerySchema.safeParse(queryParams);
     if (!validatedQuery.success) {
       return NextResponse.json(
@@ -89,15 +81,12 @@ export async function GET(request: NextRequest) {
 
     const { startDate, endDate, userId: filterUserId } = validatedQuery.data;
 
-    // Construir filtros
     const where: Prisma.MovementWhereInput = {};
 
-    // Los ADMIN pueden filtrar por userId si se proporciona
     if (filterUserId) {
       where.userId = filterUserId;
     }
 
-    // Filtro por rango de fechas
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {
@@ -108,7 +97,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Obtener todos los movimientos
     const movements = await prisma.movement.findMany({
       where,
       include: {
@@ -124,7 +112,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Generar CSV
     const csvHeader = "Fecha,Concepto,Tipo,Monto,Usuario,Email\n";
     const csvRows = movements.map((movement) => {
       const date = new Date(movement.date).toISOString().split("T")[0];
@@ -139,11 +126,9 @@ export async function GET(request: NextRequest) {
 
     const csvContent = csvHeader + csvRows.join("\n");
 
-    // Generar nombre de archivo con fecha
     const now = new Date();
     const filename = `reporte-movimientos-${now.toISOString().split("T")[0]}.csv`;
 
-    // Retornar CSV como respuesta
     return new NextResponse(csvContent, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
@@ -151,20 +136,24 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-
-    // Manejar errores de Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      error.code.startsWith("P")
+    ) {
+      const prismaError = error as { code: string; message?: string };
       return NextResponse.json(
         {
           error: "Database Error",
           message: "Error al consultar la base de datos",
-          code: error.code,
+          code: prismaError.code,
         },
         { status: 500 }
       );
     }
 
-    // Error genérico
     return NextResponse.json(
       {
         error: "Internal Server Error",
@@ -175,9 +164,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Escapa campos CSV (maneja comas y comillas)
- */
 function escapeCSVField(field: string): string {
   if (field.includes(",") || field.includes('"') || field.includes("\n")) {
     return `"${field.replace(/"/g, '""')}"`;

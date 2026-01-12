@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
 import { Role } from "@/lib/rbac";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { getUsersQuerySchema } from "@/features/usuarios/validators/user.validator";
 
 /**
@@ -147,17 +147,14 @@ import { getUsersQuerySchema } from "@/features/usuarios/validators/user.validat
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verificar que el usuario sea ADMIN
     const guardResult = await apiGuard(request, { role: Role.ADMIN });
     if (!guardResult.allowed || !guardResult.user) {
       return guardResult.response || NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Parsear query parameters
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
 
-    // Validar query parameters
     const validatedQuery = getUsersQuerySchema.safeParse(queryParams);
     if (!validatedQuery.success) {
       return NextResponse.json(
@@ -172,15 +169,12 @@ export async function GET(request: NextRequest) {
 
     const { page, limit, role, search } = validatedQuery.data;
 
-    // Construir filtros
     const where: Prisma.UserWhereInput = {};
 
-    // Filtro por rol
     if (role) {
       where.role = role;
     }
 
-    // Filtro por búsqueda (nombre o email)
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -188,10 +182,8 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Calcular skip para paginación
     const skip = (page - 1) * limit;
 
-    // Obtener usuarios y total
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -221,7 +213,6 @@ export async function GET(request: NextRequest) {
       prisma.user.count({ where }),
     ]);
 
-    // Calcular paginación
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
@@ -238,20 +229,24 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-
-    // Manejar errores de Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      error.code.startsWith("P")
+    ) {
+      const prismaError = error as { code: string; message?: string };
       return NextResponse.json(
         {
           error: "Database Error",
           message: "Error al consultar la base de datos",
-          code: error.code,
+          code: prismaError.code,
         },
         { status: 500 }
       );
     }
 
-    // Error genérico
     return NextResponse.json(
       {
         error: "Internal Server Error",

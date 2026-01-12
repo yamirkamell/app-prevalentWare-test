@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
 import { Role } from "@/lib/rbac";
-import { Prisma } from "@prisma/client";
 import { updateUserSchema } from "@/features/usuarios/validators/user.validator";
 
 /**
@@ -126,13 +125,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    // Verificar que el usuario sea ADMIN
     const guardResult = await apiGuard(request, { role: Role.ADMIN });
     if (!guardResult.allowed || !guardResult.user) {
       return guardResult.response || NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // En Next.js 15+, params puede ser una Promise
     const resolvedParams = params instanceof Promise ? await params : params;
     const userId = resolvedParams.id;
 
@@ -146,8 +143,6 @@ export async function PUT(
       );
     }
 
-
-    // Parsear body
     let body;
     try {
       body = await request.json();
@@ -161,7 +156,6 @@ export async function PUT(
       );
     }
 
-    // Validar datos
     const validationResult = updateUserSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
@@ -176,7 +170,6 @@ export async function PUT(
 
     const { name, role } = validationResult.data;
 
-    // Verificar que el usuario existe
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -191,7 +184,6 @@ export async function PUT(
       );
     }
 
-    // Actualizar usuario (solo name y role, NO email)
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -225,11 +217,16 @@ export async function PUT(
       { status: 200 }
     );
   } catch (error) {
-
-    // Manejar errores de Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // Error de violación de foreign key
-      if (error.code === "P2003") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      error.code.startsWith("P")
+    ) {
+      const prismaError = error as { code: string; message?: string };
+      
+      if (prismaError.code === "P2003") {
         return NextResponse.json(
           {
             error: "Validation Error",
@@ -239,7 +236,6 @@ export async function PUT(
         );
       }
 
-      // Error de violación de unique constraint
       if (error.code === "P2002") {
         return NextResponse.json(
           {
@@ -260,7 +256,6 @@ export async function PUT(
       );
     }
 
-    // Error genérico
     return NextResponse.json(
       {
         error: "Internal Server Error",

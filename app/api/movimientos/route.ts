@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { apiGuard } from "@/features/auth/guards/apiGuard";
 import { Role } from "@/lib/rbac";
 import { normalizeUserForRBAC } from "@/features/auth/guards/utils";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import {
   createMovementSchema,
   getMovementsQuerySchema,
@@ -255,13 +255,19 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      error.code.startsWith("P")
+    ) {
+      const prismaError = error as { code: string; message?: string };
       return NextResponse.json(
         {
           error: "Database Error",
           message: "Error al consultar la base de datos",
-          code: error.code,
+          code: prismaError.code,
         },
         { status: 500 }
       );
@@ -496,9 +502,16 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2003") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      error.code.startsWith("P")
+    ) {
+      const prismaError = error as { code: string; message?: string };
+      
+      if (prismaError.code === "P2003") {
         return NextResponse.json(
           {
             error: "Validation Error",
@@ -508,7 +521,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (error.code === "P2002") {
+      if (prismaError.code === "P2002") {
         return NextResponse.json(
           {
             error: "Validation Error",
