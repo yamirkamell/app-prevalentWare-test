@@ -20,7 +20,7 @@ Aplicación fullstack construida con Next.js 16 (App Router), TypeScript, Prisma
 /components
   ui/                     -> Componentes UI reutilizables (shadcn/ui)
   Sidebar.tsx             -> Navegación lateral izquierda
-  PageLayout.tsx           -> Layout wrapper para páginas protegidas
+  PageLayout.tsx          -> Layout wrapper para páginas protegidas
 
 /features                 -> Arquitectura feature-based
   auth/                   -> Autenticación y autorización
@@ -69,7 +69,7 @@ Aplicación fullstack construida con Next.js 16 (App Router), TypeScript, Prisma
 
 - **Node.js** >= 18
 - **npm** >= 9 (o **pnpm** >= 8)
-- **PostgreSQL** (Supabase recomendado)
+- **PostgreSQL** (Supabase)
 - **Git**
 
 ## 🚀 Instalación
@@ -343,51 +343,7 @@ npm run lint
 # El proyecto usa ESLint con configuración Next.js
 ```
 
-## 📦 Dependencias Principales
-
-### Producción
-- `next` - Framework React
-- `react` / `react-dom` - Biblioteca UI
-- `@prisma/client` - ORM
-- `better-auth` - Autenticación
-- `zod` - Validación de schemas
-- `zustand` - State management
-- `recharts` - Gráficos
-- `papaparse` - Generación CSV
-- `swagger-jsdoc` / `swagger-ui-react` - Documentación API
-
-### Desarrollo
-- `typescript` - Type checking
-- `vitest` - Testing framework
-- `@testing-library/react` - Testing utilities
-- `tailwindcss` - CSS framework
-- `eslint` - Linter
-
-## 🐛 Troubleshooting
-
-### Error de conexión a base de datos
-- Verifica que `DATABASE_URL` esté correctamente configurado
-- Si usas Supabase, asegúrate de incluir `?sslmode=require` en la URL
-- Verifica que la base de datos esté accesible desde tu IP
-
-### Error "Model does not exist"
-- Ejecuta `npm run db:push` para sincronizar el schema
-- O ejecuta el SQL manualmente en Supabase SQL Editor
-
-### Error de autenticación
-- Verifica que `BETTER_AUTH_SECRET` tenga al menos 32 caracteres
-- Asegúrate de que `BETTER_AUTH_URL` coincida con tu URL actual
-
-### Build falla en Vercel
-- Verifica que todas las variables de entorno estén configuradas
-- Revisa los logs de build en Vercel
-- Asegúrate de que `DATABASE_URL` use SSL en producción
-
-## 📄 Licencia
-
-ISC
-
-## 👤 Autor
+## Autor
 
 Yamir Kamell
 
